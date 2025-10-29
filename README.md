@@ -41,4 +41,5 @@ It features **authentication with Prisma and Clerk**, **dark mode**, and a moder
 | **Themes**             | Dark mode with `next-themes`                       |
 | **Notifications**      | Real-time updates via Prisma backend               |
 | **State & Utilities**  | clsx, class-variance-authority, date-fns, react-hot-toast |
+| **Testing**  | component, integration and unit testing with jest |
 
