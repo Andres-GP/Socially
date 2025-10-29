@@ -1,3 +1,13 @@
+// __tests__/userPostCommentLike.test.ts
+import {
+  getPrisma,
+  setupDatabase,
+  teardownDatabase,
+  resetDatabase,
+} from "../prismaTestHelper";
+
+const prisma = getPrisma();
+
 jest.mock("uploadthing/next", () => {
   return {
     createUploadthing: jest.fn(() => {
@@ -13,8 +23,6 @@ jest.mock("uploadthing/next", () => {
 
 jest.mock("@clerk/nextjs/server");
 
-import { prisma, setupDatabase, teardownDatabase } from "../prismaTestHelper";
-
 beforeAll(async () => {
   await setupDatabase();
 });
@@ -24,38 +32,35 @@ afterAll(async () => {
 });
 
 beforeEach(async () => {
-  await prisma.notification.deleteMany();
-  await prisma.like.deleteMany();
-  await prisma.comment.deleteMany();
-  await prisma.post.deleteMany();
-  await prisma.follows.deleteMany();
-  await prisma.user.deleteMany();
+  jest.clearAllMocks();
+  await resetDatabase();
 });
 
 test("create a user", async () => {
   const user = await prisma.user.create({
     data: {
-      email: "user1@example.com",
-      username: "user1",
-      clerkId: "clerk1",
+      email: `user1-${Date.now()}@example.com`,
+      username: `user1-${Date.now()}`,
+      clerkId: `clerk1-${Date.now()}`,
       name: "User One",
     },
   });
 
-  expect(user.email).toBe("user1@example.com");
-  expect(user.username).toBe("user1");
+  expect(user.email).toMatch(/user1-\d+@example\.com/);
+  expect(user.username).toMatch(/user1-\d+/);
 });
 
 test("create a post and link it to a user", async () => {
   const user = await prisma.user.create({
-    data: { email: "user2@example.com", username: "user2", clerkId: "clerk2" },
+    data: {
+      email: `user2-${Date.now()}@example.com`,
+      username: `user2-${Date.now()}`,
+      clerkId: `clerk2-${Date.now()}`,
+    },
   });
 
   const post = await prisma.post.create({
-    data: {
-      content: "Hello world",
-      authorId: user.id,
-    },
+    data: { content: "Hello world", authorId: user.id },
   });
 
   const fetchedPost = await prisma.post.findUnique({
@@ -68,18 +73,19 @@ test("create a post and link it to a user", async () => {
 
 test("create a comment linked to post and user", async () => {
   const user = await prisma.user.create({
-    data: { email: "user3@example.com", username: "user3", clerkId: "clerk3" },
+    data: {
+      email: `user3-${Date.now()}@example.com`,
+      username: `user3-${Date.now()}`,
+      clerkId: `clerk3-${Date.now()}`,
+    },
   });
+
   const post = await prisma.post.create({
     data: { content: "Post comment", authorId: user.id },
   });
 
   const comment = await prisma.comment.create({
-    data: {
-      content: "This is a comment",
-      authorId: user.id,
-      postId: post.id,
-    },
+    data: { content: "This is a comment", authorId: user.id, postId: post.id },
   });
 
   const fetchedComment = await prisma.comment.findUnique({
@@ -93,8 +99,13 @@ test("create a comment linked to post and user", async () => {
 
 test("create a like and prevent duplicates", async () => {
   const user = await prisma.user.create({
-    data: { email: "user4@example.com", username: "user4", clerkId: "clerk4" },
+    data: {
+      email: `user4-${Date.now()}@example.com`,
+      username: `user4-${Date.now()}`,
+      clerkId: `clerk4-${Date.now()}`,
+    },
   });
+
   const post = await prisma.post.create({
     data: { content: "Post like", authorId: user.id },
   });
@@ -108,10 +119,19 @@ test("create a like and prevent duplicates", async () => {
 
 test("follows between users", async () => {
   const userA = await prisma.user.create({
-    data: { email: "a@example.com", username: "userA", clerkId: "clerkA" },
+    data: {
+      email: `a-${Date.now()}@example.com`,
+      username: `userA-${Date.now()}`,
+      clerkId: `clerkA-${Date.now()}`,
+    },
   });
+
   const userB = await prisma.user.create({
-    data: { email: "b@example.com", username: "userB", clerkId: "clerkB" },
+    data: {
+      email: `b-${Date.now()}@example.com`,
+      username: `userB-${Date.now()}`,
+      clerkId: `clerkB-${Date.now()}`,
+    },
   });
 
   const follow = await prisma.follows.create({
@@ -125,16 +145,17 @@ test("follows between users", async () => {
 test("create a like notification", async () => {
   const user1 = await prisma.user.create({
     data: {
-      email: "like1@example.com",
-      username: "like1",
-      clerkId: "clerkLike1",
+      email: `like1-${Date.now()}@example.com`,
+      username: `like1-${Date.now()}`,
+      clerkId: `clerkLike1-${Date.now()}`,
     },
   });
+
   const user2 = await prisma.user.create({
     data: {
-      email: "like2@example.com",
-      username: "like2",
-      clerkId: "clerkLike2",
+      email: `like2-${Date.now()}@example.com`,
+      username: `like2-${Date.now()}`,
+      clerkId: `clerkLike2-${Date.now()}`,
     },
   });
 

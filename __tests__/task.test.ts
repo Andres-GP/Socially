@@ -1,4 +1,3 @@
-// __tests__/tasks.test.ts
 import { GET, POST, DELETE } from "../src/app/api/tasks/route";
 
 describe("Tasks API", () => {

@@ -1,9 +1,7 @@
-// __tests__/Profile.test.tsx
 import ProfilePageServer, {
   generateMetadata,
 } from "../src/app/profile/[username]/page";
 import * as profileActions from "../src/actions/profile.action";
-import { notFound } from "next/navigation";
 
 jest.mock("next/navigation", () => ({
   notFound: jest.fn(),
@@ -30,7 +28,6 @@ describe("ProfilePageServer", () => {
     );
     (profileActions.isFollowing as jest.Mock).mockResolvedValue(true);
 
-    // Ejecutamos la función, solo para que haga las llamadas
     await ProfilePageServer({ params: { username: "alice" } });
 
     expect(profileActions.getProfileByUsername).toHaveBeenCalledWith("alice");

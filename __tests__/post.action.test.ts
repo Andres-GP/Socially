@@ -1,10 +1,15 @@
-import { prisma, setupDatabase, teardownDatabase } from "../prismaTestHelper";
+import {
+  getPrisma,
+  setupDatabase,
+  teardownDatabase,
+  resetDatabase,
+} from "../prismaTestHelper";
 import * as userActions from "../src/actions/user.action";
 import * as postActions from "../src/actions/post.action";
 
-jest.mock("next/cache", () => ({
-  revalidatePath: jest.fn(),
-}));
+jest.mock("next/cache", () => ({ revalidatePath: jest.fn() }));
+
+let prisma = getPrisma();
 
 beforeAll(async () => {
   await setupDatabase();
@@ -15,20 +20,18 @@ afterAll(async () => {
 });
 
 beforeEach(async () => {
-  await prisma.notification.deleteMany();
-  await prisma.like.deleteMany();
-  await prisma.comment.deleteMany();
-  await prisma.post.deleteMany();
-  await prisma.user.deleteMany();
+  prisma = getPrisma();
+  jest.clearAllMocks();
+  await resetDatabase();
 });
 
 describe("Post actions", () => {
   test("createPost creates a post", async () => {
     const user = await prisma.user.create({
       data: {
-        email: "user1@example.com",
-        username: "user1",
-        clerkId: "clerk1",
+        email: `user1-${Date.now()}@example.com`,
+        username: `user1-${Date.now()}`,
+        clerkId: `clerk1-${Date.now()}`,
       },
     });
 
@@ -41,19 +44,19 @@ describe("Post actions", () => {
     expect(result?.post?.authorId).toBe(user.id);
   });
 
-  test("toggleLike creates and deletes likes", async () => {
+  test("toggleLike creates and deletes likes safely", async () => {
     const userA = await prisma.user.create({
       data: {
-        email: "user2@example.com",
-        username: "user2",
-        clerkId: "clerk2",
+        email: `userA-${Date.now()}@example.com`,
+        username: `userA-${Date.now()}`,
+        clerkId: `clerkA-${Date.now()}`,
       },
     });
     const userB = await prisma.user.create({
       data: {
-        email: "userB@example.com",
-        username: "userB",
-        clerkId: "clerkB",
+        email: `userB-${Date.now()}@example.com`,
+        username: `userB-${Date.now()}`,
+        clerkId: `clerkB-${Date.now()}`,
       },
     });
 
@@ -63,9 +66,11 @@ describe("Post actions", () => {
 
     jest.spyOn(userActions, "getDbUserId").mockResolvedValue(userA.id);
 
+    // Crear like
     let result = await postActions.toggleLike(post.id);
     expect(result?.success).toBe(true);
 
+    // Eliminar like
     result = await postActions.toggleLike(post.id);
     expect(result?.success).toBe(true);
   });
@@ -73,16 +78,16 @@ describe("Post actions", () => {
   test("createComment adds comment and notification", async () => {
     const userA = await prisma.user.create({
       data: {
-        email: "user3@example.com",
-        username: "user3",
-        clerkId: "clerk3",
+        email: `userA-${Date.now()}@example.com`,
+        username: `userA-${Date.now()}`,
+        clerkId: `clerkA-${Date.now()}`,
       },
     });
     const userB = await prisma.user.create({
       data: {
-        email: "userB3@example.com",
-        username: "userB3",
-        clerkId: "clerkB3",
+        email: `userB-${Date.now()}@example.com`,
+        username: `userB-${Date.now()}`,
+        clerkId: `clerkB-${Date.now()}`,
       },
     });
 
@@ -101,9 +106,9 @@ describe("Post actions", () => {
   test("deletePost deletes own post", async () => {
     const user = await prisma.user.create({
       data: {
-        email: "user4@example.com",
-        username: "user4",
-        clerkId: "clerk4",
+        email: `user-${Date.now()}@example.com`,
+        username: `user-${Date.now()}`,
+        clerkId: `clerk-${Date.now()}`,
       },
     });
 

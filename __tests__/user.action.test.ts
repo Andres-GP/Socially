@@ -1,4 +1,10 @@
-import { prisma, setupDatabase, teardownDatabase } from "../prismaTestHelper";
+// __tests__/user.action.test.ts
+import {
+  getPrisma,
+  setupDatabase,
+  teardownDatabase,
+  resetDatabase,
+} from "../prismaTestHelper";
 import * as userActions from "../src/actions/user.action";
 
 jest.mock("@clerk/nextjs/server", () => ({
@@ -10,6 +16,8 @@ jest.mock("next/cache", () => ({ revalidatePath: jest.fn() }));
 
 const { auth, currentUser } = require("@clerk/nextjs/server");
 
+const prisma = getPrisma();
+
 beforeAll(async () => {
   await setupDatabase();
 });
@@ -19,44 +27,40 @@ afterAll(async () => {
 });
 
 beforeEach(async () => {
-  await prisma.notification.deleteMany();
-  await prisma.follows.deleteMany();
-  await prisma.like.deleteMany();
-  await prisma.comment.deleteMany();
-  await prisma.post.deleteMany();
-  await prisma.user.deleteMany();
+  jest.clearAllMocks();
+  await resetDatabase();
 });
 
 describe("User actions", () => {
   test("syncUser creates new user if not exists", async () => {
-    auth.mockResolvedValue({ userId: "clerk1" });
+    auth.mockResolvedValue({ userId: `clerk1-${Date.now()}` });
     currentUser.mockResolvedValue({
       firstName: "John",
       lastName: "Doe",
-      username: "johndoe",
+      username: `user1-${Date.now()}`,
       imageUrl: "img.png",
-      emailAddresses: [{ emailAddress: "john@example.com" }],
+      emailAddresses: [{ emailAddress: `john${Date.now()}@example.com` }],
     });
 
     const user = await userActions.syncUser();
 
     expect(user).toBeDefined();
-    expect(user?.clerkId).toBe("clerk1");
-    expect(user?.username).toBe("johndoe");
-    expect(user?.email).toBe("john@example.com");
+    expect(user?.clerkId).toMatch(/clerk1-\d+/);
+    expect(user?.username).toMatch(/user1-\d+/);
+    expect(user?.email).toMatch(/john\d+@example\.com/);
   });
 
   test("syncUser returns existing user if already in DB", async () => {
     const existing = await prisma.user.create({
       data: {
-        clerkId: "clerk2",
-        username: "existinguser",
-        email: "exist@example.com",
+        clerkId: `clerk2-${Date.now()}`,
+        username: `existinguser-${Date.now()}`,
+        email: `exist${Date.now()}@example.com`,
         name: "Exist User",
       },
     });
 
-    auth.mockResolvedValue({ userId: "clerk2" });
+    auth.mockResolvedValue({ userId: existing.clerkId });
     currentUser.mockResolvedValue({});
 
     const user = await userActions.syncUser();
@@ -66,13 +70,13 @@ describe("User actions", () => {
   test("getUserByClerkId returns user with counts", async () => {
     const user = await prisma.user.create({
       data: {
-        clerkId: "clerk3",
-        username: "user3",
-        email: "user3@example.com",
+        clerkId: `clerk3-${Date.now()}`,
+        username: `user3-${Date.now()}`,
+        email: `user3-${Date.now()}@example.com`,
       },
     });
 
-    const result = await userActions.getUserByClerkId("clerk3");
+    const result = await userActions.getUserByClerkId(user.clerkId);
     expect(result?.id).toBe(user.id);
     expect(result?._count).toBeDefined();
   });
@@ -80,13 +84,13 @@ describe("User actions", () => {
   test("getDbUserId returns user's database ID", async () => {
     const user = await prisma.user.create({
       data: {
-        clerkId: "clerk4",
-        username: "user4",
-        email: "user4@example.com",
+        clerkId: `clerk4-${Date.now()}`,
+        username: `user4-${Date.now()}`,
+        email: `user4-${Date.now()}@example.com`,
       },
     });
 
-    auth.mockResolvedValue({ userId: "clerk4" });
+    auth.mockResolvedValue({ userId: user.clerkId });
 
     const id = await userActions.getDbUserId();
     expect(id).toBe(user.id);
@@ -95,29 +99,45 @@ describe("User actions", () => {
   test("getRandomUsers returns 3 users excluding current and already followed", async () => {
     const current = await prisma.user.create({
       data: {
-        clerkId: "current",
-        username: "current",
-        email: "current@example.com",
+        clerkId: `current-${Date.now()}`,
+        username: `current-${Date.now()}`,
+        email: `current${Date.now()}@example.com`,
       },
     });
     const u1 = await prisma.user.create({
-      data: { clerkId: "u1", username: "u1", email: "u1@example.com" },
+      data: {
+        clerkId: `u1-${Date.now()}`,
+        username: `u1-${Date.now()}`,
+        email: `u1${Date.now()}@example.com`,
+      },
     });
     const u2 = await prisma.user.create({
-      data: { clerkId: "u2", username: "u2", email: "u2@example.com" },
+      data: {
+        clerkId: `u2-${Date.now()}`,
+        username: `u2-${Date.now()}`,
+        email: `u2${Date.now()}@example.com`,
+      },
     });
     const u3 = await prisma.user.create({
-      data: { clerkId: "u3", username: "u3", email: "u3@example.com" },
+      data: {
+        clerkId: `u3-${Date.now()}`,
+        username: `u3-${Date.now()}`,
+        email: `u3${Date.now()}@example.com`,
+      },
     });
     const u4 = await prisma.user.create({
-      data: { clerkId: "u4", username: "u4", email: "u4@example.com" },
+      data: {
+        clerkId: `u4-${Date.now()}`,
+        username: `u4-${Date.now()}`,
+        email: `u4${Date.now()}@example.com`,
+      },
     });
 
     await prisma.follows.create({
       data: { followerId: current.id, followingId: u4.id },
     });
 
-    auth.mockResolvedValue({ userId: "current" });
+    auth.mockResolvedValue({ userId: current.clerkId });
 
     const users = await userActions.getRandomUsers();
     expect(users.length).toBeLessThanOrEqual(3);
@@ -128,16 +148,16 @@ describe("User actions", () => {
   test("toggleFollow creates follow and notification", async () => {
     const follower = await prisma.user.create({
       data: {
-        clerkId: "follower",
-        username: "follower",
-        email: "follower@example.com",
+        clerkId: `follower-${Date.now()}`,
+        username: `follower-${Date.now()}`,
+        email: `follower${Date.now()}@example.com`,
       },
     });
     const following = await prisma.user.create({
       data: {
-        clerkId: "following",
-        username: "following",
-        email: "following@example.com",
+        clerkId: `following-${Date.now()}`,
+        username: `following-${Date.now()}`,
+        email: `following${Date.now()}@example.com`,
       },
     });
 
@@ -164,10 +184,18 @@ describe("User actions", () => {
 
   test("toggleFollow unfollows if already following", async () => {
     const follower = await prisma.user.create({
-      data: { clerkId: "f1", username: "f1", email: "f1@example.com" },
+      data: {
+        clerkId: `f1-${Date.now()}`,
+        username: `f1-${Date.now()}`,
+        email: `f1${Date.now()}@example.com`,
+      },
     });
     const following = await prisma.user.create({
-      data: { clerkId: "f2", username: "f2", email: "f2@example.com" },
+      data: {
+        clerkId: `f2-${Date.now()}`,
+        username: `f2-${Date.now()}`,
+        email: `f2${Date.now()}@example.com`,
+      },
     });
 
     await prisma.follows.create({
@@ -192,7 +220,11 @@ describe("User actions", () => {
 
   test("toggleFollow returns error when trying to follow self", async () => {
     const user = await prisma.user.create({
-      data: { clerkId: "self", username: "self", email: "self@example.com" },
+      data: {
+        clerkId: `self-${Date.now()}`,
+        username: `self-${Date.now()}`,
+        email: `self${Date.now()}@example.com`,
+      },
     });
 
     auth.mockResolvedValue({ userId: user.clerkId });

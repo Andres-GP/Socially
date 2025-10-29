@@ -1,6 +1,14 @@
-import { prisma, setupDatabase, teardownDatabase } from "../prismaTestHelper";
+// __tests__/profile.action.test.ts
+import {
+  getPrisma,
+  setupDatabase,
+  teardownDatabase,
+  resetDatabase,
+} from "../prismaTestHelper";
 import * as userActions from "../src/actions/user.action";
 import * as profileActions from "../src/actions/profile.action";
+
+const prisma = getPrisma();
 
 jest.mock("next/cache", () => ({ revalidatePath: jest.fn() }));
 jest.mock("@clerk/nextjs/server", () => ({
@@ -16,38 +24,35 @@ afterAll(async () => {
 });
 
 beforeEach(async () => {
-  await prisma.follows.deleteMany();
-  await prisma.like.deleteMany();
-  await prisma.comment.deleteMany();
-  await prisma.post.deleteMany();
-  await prisma.user.deleteMany();
+  jest.clearAllMocks();
+  await resetDatabase(); // limpia todas las tablas antes de cada test
 });
 
 describe("Profile actions", () => {
   test("getProfileByUsername returns user profile", async () => {
     const user = await prisma.user.create({
       data: {
-        email: "user1@example.com",
-        username: "user1",
-        clerkId: "clerk1",
+        email: `user1-${Date.now()}@example.com`,
+        username: `user1-${Date.now()}`,
+        clerkId: `clerk1-${Date.now()}`,
         name: "User One",
         bio: "Bio",
       },
     });
 
-    const profile = await profileActions.getProfileByUsername("user1");
+    const profile = await profileActions.getProfileByUsername(user.username);
 
     expect(profile?.id).toBe(user.id);
-    expect(profile?.username).toBe("user1");
+    expect(profile?.username).toBe(user.username);
     expect(profile?._count.posts).toBe(0);
   });
 
   test("getUserPosts returns all posts by user", async () => {
     const user = await prisma.user.create({
       data: {
-        email: "user2@example.com",
-        username: "user2",
-        clerkId: "clerk2",
+        email: `user2-${Date.now()}@example.com`,
+        username: `user2-${Date.now()}`,
+        clerkId: `clerk2-${Date.now()}`,
       },
     });
 
@@ -68,9 +73,9 @@ describe("Profile actions", () => {
   test("getUserLikedPosts returns posts liked by user", async () => {
     const user = await prisma.user.create({
       data: {
-        email: "user3@example.com",
-        username: "user3",
-        clerkId: "clerk3",
+        email: `user3-${Date.now()}@example.com`,
+        username: `user3-${Date.now()}`,
+        clerkId: `clerk3-${Date.now()}`,
       },
     });
     const post = await prisma.post.create({
@@ -88,9 +93,9 @@ describe("Profile actions", () => {
   test("updateProfile updates user info", async () => {
     const user = await prisma.user.create({
       data: {
-        email: "user4@example.com",
-        username: "user4",
-        clerkId: "clerk4",
+        email: `user4-${Date.now()}@example.com`,
+        username: `user4-${Date.now()}`,
+        clerkId: `clerk4-${Date.now()}`,
       },
     });
 
@@ -101,7 +106,7 @@ describe("Profile actions", () => {
     formData.set("website", "https://example.com");
 
     const { auth } = require("@clerk/nextjs/server");
-    auth.mockResolvedValue({ userId: "clerk4" });
+    auth.mockResolvedValue({ userId: user.clerkId });
 
     const result = await profileActions.updateProfile(formData);
 
@@ -112,10 +117,18 @@ describe("Profile actions", () => {
 
   test("isFollowing returns true if current user follows another", async () => {
     const userA = await prisma.user.create({
-      data: { email: "a@example.com", username: "userA", clerkId: "clerkA" },
+      data: {
+        email: `a-${Date.now()}@example.com`,
+        username: `userA-${Date.now()}`,
+        clerkId: `clerkA-${Date.now()}`,
+      },
     });
     const userB = await prisma.user.create({
-      data: { email: "b@example.com", username: "userB", clerkId: "clerkB" },
+      data: {
+        email: `b-${Date.now()}@example.com`,
+        username: `userB-${Date.now()}`,
+        clerkId: `clerkB-${Date.now()}`,
+      },
     });
 
     await prisma.follows.create({
@@ -131,10 +144,18 @@ describe("Profile actions", () => {
 
   test("isFollowing returns false if not following", async () => {
     const userA = await prisma.user.create({
-      data: { email: "c@example.com", username: "userC", clerkId: "clerkC" },
+      data: {
+        email: `c-${Date.now()}@example.com`,
+        username: `userC-${Date.now()}`,
+        clerkId: `clerkC-${Date.now()}`,
+      },
     });
     const userB = await prisma.user.create({
-      data: { email: "d@example.com", username: "userD", clerkId: "clerkD" },
+      data: {
+        email: `d-${Date.now()}@example.com`,
+        username: `userD-${Date.now()}`,
+        clerkId: `clerkD-${Date.now()}`,
+      },
     });
 
     jest.spyOn(userActions, "getDbUserId").mockResolvedValue(userA.id);

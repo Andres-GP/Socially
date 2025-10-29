@@ -1,9 +1,16 @@
-import { prisma, setupDatabase, teardownDatabase } from "../prismaTestHelper";
+import {
+  getPrisma,
+  setupDatabase,
+  teardownDatabase,
+  resetDatabase,
+} from "../prismaTestHelper";
 import * as userActions from "../src/actions/user.action";
 import {
   getNotifications,
   markNotificationsAsRead,
 } from "../src/actions/notification.action";
+
+const prisma = getPrisma();
 
 beforeAll(async () => {
   await setupDatabase();
@@ -14,26 +21,24 @@ afterAll(async () => {
 });
 
 beforeEach(async () => {
-  await prisma.notification.deleteMany();
-  await prisma.comment.deleteMany();
-  await prisma.post.deleteMany();
-  await prisma.user.deleteMany();
+  jest.clearAllMocks();
+  await resetDatabase();
 });
 
 describe("Notifications", () => {
   test("getNotifications returns notifications with relations", async () => {
     const receiver = await prisma.user.create({
       data: {
-        email: "receiver@example.com",
-        username: "receiver",
-        clerkId: "clerkR",
+        email: `receiver-${Date.now()}@example.com`,
+        username: `receiver-${Date.now()}`,
+        clerkId: `clerkR-${Date.now()}`,
       },
     });
     const creator = await prisma.user.create({
       data: {
-        email: "creator@example.com",
-        username: "creator",
-        clerkId: "clerkC",
+        email: `creator-${Date.now()}@example.com`,
+        username: `creator-${Date.now()}`,
+        clerkId: `clerkC-${Date.now()}`,
       },
     });
 
@@ -66,26 +71,23 @@ describe("Notifications", () => {
     expect(notifications.length).toBe(1);
     expect(notifications[0].id).toBe(notification.id);
     expect(notifications[0].creator.id).toBe(creator.id);
-    expect(notifications[0].post).not.toBeNull();
     expect(notifications[0].post!.id).toBe(post.id);
-
-    expect(notifications[0].comment).not.toBeNull();
     expect(notifications[0].comment!.id).toBe(comment.id);
   });
 
   test("markNotificationsAsRead marks notifications as read", async () => {
     const receiver = await prisma.user.create({
       data: {
-        email: "receiver2@example.com",
-        username: "receiver2",
-        clerkId: "clerkR2",
+        email: `receiver2-${Date.now()}@example.com`,
+        username: `receiver2-${Date.now()}`,
+        clerkId: `clerkR2-${Date.now()}`,
       },
     });
     const creator = await prisma.user.create({
       data: {
-        email: "creator2@example.com",
-        username: "creator2",
-        clerkId: "clerkC2",
+        email: `creator2-${Date.now()}@example.com`,
+        username: `creator2-${Date.now()}`,
+        clerkId: `clerkC2-${Date.now()}`,
       },
     });
 
@@ -105,7 +107,6 @@ describe("Notifications", () => {
     const updatedNotifications = await prisma.notification.findMany({
       where: { userId: receiver.id },
     });
-
     expect(updatedNotifications.every((n) => n.read === true)).toBe(true);
   });
 });
