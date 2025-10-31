@@ -2,7 +2,7 @@ const path = require("path");
 
 module.exports = {
   projects: [
-    //Backend
+    // Backend (Node)
     {
       displayName: "node",
       testEnvironment: "node",
@@ -14,7 +14,7 @@ module.exports = {
       },
     },
 
-    //Frontend
+    // Frontend (React / Next.js)
     {
       displayName: "jsdom",
       testEnvironment: "jsdom",
@@ -24,11 +24,31 @@ module.exports = {
       moduleNameMapper: {
         "^@/(.*)$": "<rootDir>/src/$1",
       },
-      transformIgnorePatterns: [
-        "/node_modules/(?!@clerk/backend|@clerk/nextjs|lucide-react|@radix-ui|uploadthing)",
-      ],
+
       transform: {
-        "^.+\\.(ts|tsx|js|jsx|mjs)$": "ts-jest",
+        "^.+\\.(ts|tsx|js|jsx|mjs)$": [
+          "babel-jest",
+          {
+            presets: [
+              ["@babel/preset-env", { targets: { node: "current" } }],
+              "@babel/preset-typescript",
+              "@babel/preset-react",
+            ],
+          },
+        ],
+      },
+
+      transformIgnorePatterns: [
+        "/node_modules/(?!(lucide-react|@radix-ui|uploadthing|@clerk/nextjs|@clerk/backend)/)",
+      ],
+
+      // 👇 quitamos '.mjs'
+      extensionsToTreatAsEsm: [".ts", ".tsx"],
+
+      globals: {
+        "ts-jest": {
+          useESM: true,
+        },
       },
     },
   ],

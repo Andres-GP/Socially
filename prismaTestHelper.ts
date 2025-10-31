@@ -14,7 +14,6 @@ if (
   throw new Error("❌ Trying to run production code on test database!");
 }
 
-// Creamos un singleton seguro de Prisma
 let prisma: PrismaClient;
 
 export const getPrisma = (): PrismaClient => {
@@ -33,7 +32,6 @@ export const teardownDatabase = async () => {
   if (prisma) await prisma.$disconnect();
 };
 
-// Limpiar todas las tablas dependientes en orden correcto
 export const resetDatabase = async () => {
   await prisma.$transaction([
     prisma.notification.deleteMany(),

@@ -1,23 +1,40 @@
 import "@testing-library/jest-dom";
 import React from "react";
+import "whatwg-fetch";
 
-jest.mock("@/components/ui/avatar", () => ({
-  Avatar: ({ children }: any) => React.createElement("div", null, children),
-  AvatarImage: ({ src }: any) =>
-    React.createElement("img", { src, alt: "avatar" }),
-}));
+global.React = React;
 
-jest.mock("@/components/ui/scroll-area", () => ({
-  ScrollArea: ({ children }: any) => React.createElement("div", null, children),
-}));
+// Avatar
+jest.mock("@/components/ui/avatar", () => {
+  const React = require("react");
+  return {
+    Avatar: ({ children }: any) => React.createElement("div", null, children),
+    AvatarImage: ({ src }: any) =>
+      React.createElement("img", { src, alt: "avatar" }),
+  };
+});
 
-jest.mock("lucide-react", () => ({
-  HeartIcon: () => React.createElement("div", null, "HeartIcon"),
-  MessageCircleIcon: () =>
-    React.createElement("div", null, "MessageCircleIcon"),
-  UserPlusIcon: () => React.createElement("div", null, "UserPlusIcon"),
-}));
+// ScrollArea
+jest.mock("@/components/ui/scroll-area", () => {
+  const React = require("react");
+  return {
+    ScrollArea: ({ children }: any) =>
+      React.createElement("div", null, children),
+  };
+});
 
+// Lucide Icons
+jest.mock("lucide-react", () => {
+  const React = require("react");
+  return {
+    HeartIcon: () => React.createElement("div", null, "HeartIcon"),
+    MessageCircleIcon: () =>
+      React.createElement("div", null, "MessageCircleIcon"),
+    UserPlusIcon: () => React.createElement("div", null, "UserPlusIcon"),
+  };
+});
+
+// Next.js Navigation
 jest.mock("next/navigation", () => ({
   useRouter: jest.fn().mockReturnValue({
     push: jest.fn(),
@@ -29,11 +46,13 @@ jest.mock("next/navigation", () => ({
   useSearchParams: jest.fn().mockReturnValue(new URLSearchParams()),
 }));
 
+// Clerk server
 jest.mock("@clerk/nextjs/server", () => ({
   auth: jest.fn(),
   currentUser: jest.fn().mockResolvedValue({ id: "user_1" }),
 }));
 
+// Clerk backend
 jest.mock("@clerk/backend", () => ({
   webcrypto: {},
   someOtherExport: jest.fn(),

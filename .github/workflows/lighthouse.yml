@@ -1,0 +1,18 @@
+name: Lighthouse CI
+
+on:
+  schedule:
+    - cron: "0 3 * * 1" # Lunes 3 AM UTC
+
+jobs:
+  lighthouse:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install Lighthouse CI
+        run: npm install -g @lhci/cli
+      - name: Run Lighthouse audit
+        run: lhci autorun
