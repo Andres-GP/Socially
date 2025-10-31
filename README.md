@@ -56,7 +56,7 @@ This project includes a full GitHub Actions workflow for continuous integration,
   - Builds the project.
   - Runs **unit and integration tests** using **Jest**.
 
-- **Continuous Deployment (CD)**
+- **Continuous Deployment (CD)**.
 
   - Automatic deployment to **Vercel** after CI succeeds.
   - Manual approval required for production deployment.
