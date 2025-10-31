@@ -8,9 +8,13 @@ on:
         type: string
         default: "22"
     secrets:
-      GRAPHCMS_TOKEN:
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:
         required: true
-      NEXT_PUBLIC_GRAPHCMS_ENDPOINT:
+      CLERK_SECRET_KEY:
+        required: true
+      DATABASE_URL:
+        required: true
+      UPLOADTHING_TOKEN:
         required: true
 
 jobs:
