@@ -33,11 +33,10 @@ jobs:
           UPLOADTHING_TOKEN: ${{ secrets.UPLOADTHING_TOKEN }}
 
       - name: Deploy to Vercel (Prod)
-        uses: amondnet/vercel-action@v25
+        uses: vercel/actions@v1
         with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          token: ${{ secrets.VERCEL_TOKEN }}
+          prod: true
           working-directory: ./
 
       - name: Notify Discord
