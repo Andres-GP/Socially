@@ -61,6 +61,7 @@ This project includes a full GitHub Actions workflow for continuous integration,
   - Automatic deployment to **Vercel** after CI succeeds.
   - Manual approval required for production deployment.
   - Discord notifications for successful production deployments.
+  - [CI/CD Discord channel here!](https://discord.com/channels/1433886988158763124/1433886988980719819)
 
 - **Performance & Quality Checks**
 
