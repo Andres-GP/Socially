@@ -35,9 +35,11 @@ jobs:
       - name: Deploy to Vercel (Prod)
         uses: amondnet/vercel-action@v25
         with:
-          token: ${{ secrets.VERCEL_TOKEN }}
-          prod: true
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
           working-directory: ./
+          prod: true
 
       - name: Notify Discord
         uses: Ilshidur/action-discord@0.4.0
